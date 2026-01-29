@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Wanderlust - Map & Guide</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --secondary: #3498db;
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text: #333;
+            --meta-text: #666;
+            --highlight: #fff3cd;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+        header h1 { 
+            margin: 0; 
+            font-size: 2.8rem; 
+            letter-spacing: 1px; 
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+        }
+        header p { 
+            opacity: 0.9; 
+            margin-top: 10px; 
+            font-size: 1.1rem; 
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+        }
+
+        /* Navigation Tabs */
+        .view-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            background: #ecf0f1;
+        }
+        .view-btn {
+            padding: 10px 25px;
+            border: none;
+            background: #bdc3c7;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .view-btn.active {
+            background: var(--accent);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Controls Section */
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            min-height: 70px;
+        }
+
+        /* Dropdown & Button Styles */
+        select, .sort-btn {
+            padding: 10px 15px;
+            border: 2px solid var(--primary);
+            border-radius: 25px;
+            font-size: 0.9rem;
+            background-color: white;
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            font-family: inherit;
+        }
+        select:hover, .sort-btn:hover { border-color: var(--accent); color: var(--accent); }
+        
+        .sort-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Language Button */
+        #langBtn {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: 2px solid var(--primary);
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            position: absolute;
+            right: 20px;
+        }
+        #langBtn:hover { background: var(--accent); border-color: var(--accent); }
+
+        #searchBar {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            width: 200px;
+            font-size: 14px;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 900px) {
+            .controls { flex-direction: column; gap: 10px; height: auto; }
+            #langBtn { position: static; width: 100%; } 
+            select, #searchBar, .sort-btn { width: 100%; }
+        }
+
+        /* --- CARD VIEW STYLES --- */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .region-section { margin-bottom: 50px; }
+        .region-title {
+            font-size: 1.8rem;
+            color: var(--primary);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            scroll-margin-top: 160px;
+        }
+        .card.highlight-card { animation: highlightFade 2s ease-out; border: 2px solid var(--accent); }
+        @keyframes highlightFade {
+            0% { background-color: var(--highlight); transform: scale(1.02); }
+            100% { background-color: var(--card-bg); transform: scale(1); }
+        }
+        .card:hover { transform: translateY(-5px); }
+        
+        .card-img-container { height: 180px; background-color: #ddd; position: relative; overflow: hidden; }
+        .card-img-container img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+        .card:hover .card-img-container img { transform: scale(1.05); }
+        
+        .card-body { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
+        .country { color: var(--accent); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; margin-bottom: 2px; }
+        .place-name { margin: 0; font-size: 1.25rem; color: var(--primary); line-height: 1.2; }
+        .nickname { font-style: italic; color: var(--secondary); font-size: 0.85rem; margin-bottom: 8px; margin-top: 2px; min-height: 1.2em; }
+        .meta-info { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: 0.8rem; color: var(--meta-text); border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .place-desc { font-size: 0.9rem; line-height: 1.5; color: #555; margin-bottom: 15px; flex-grow: 1; }
+        
+        /* Actions Area */
+        .actions { 
+            border-top: 1px solid #eee; 
+            padding-top: 12px; 
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        /* Monotonous Buttons */
+        .action-link {
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            flex: 1;
+            text-align: center;
+            white-space: nowrap;
+            background-color: #f8f9fa;
+            color: #666;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .action-link:hover {
+            background-color: #e2e6ea;
+            color: #333;
+            border-color: #ccc;
+        }
+
+        /* --- MAP VIEW STYLES --- */
+        #mapSection { display: none; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        #map { height: 500px; width: 100%; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px; z-index: 1; border: 2px solid #fff; }
+        .map-directory { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .region-group h3 { color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 5px; margin-bottom: 10px; font-size: 1.1rem; cursor: pointer; }
+        .region-group h3:hover { color: var(--accent); }
+        .country-list { list-style: none; padding: 0; margin: 0; }
+        .country-list li { margin-bottom: 5px; font-size: 0.9rem; cursor: pointer; color: #555; transition: color 0.2s; display: flex; align-items: center; }
+        .country-list li:before { content: '📍'; margin-right: 5px; font-size: 0.8rem; }
+        .country-list li:hover { color: var(--secondary); font-weight: 600; }
+        
+        .leaflet-popup-content-wrapper { border-radius: 8px; }
+        .leaflet-popup-content { width: 220px !important; text-align: center; }
+        .popup-img { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; }
+        .popup-title { font-weight: bold; color: var(--primary); display: block; margin-bottom: 5px; }
+        .popup-btn { background-color: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; margin-top: 8px; width: 100%; }
+        .popup-btn:hover { background-color: #c0392b; }
+
+        /* Back to Top */
+        #backToTop { display: none; position: fixed; bottom: 30px; right: 30px; z-index: 999; border: none; background-color: var(--accent); color: white; cursor: pointer; padding: 15px; border-radius: 50%; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.3s ease; }
+        #backToTop:hover { background-color: #c0392b; transform: translateY(-5px); }
+
+        footer { text-align: center; padding: 30px; color: #888; font-size: 0.85rem; }
+        
+        .hidden-filters { display: none; }
+    </style>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+<body>
+
+<header>
+    <h1 id="title">Global Wanderlust</h1>
+    <p id="subtitle">Your Personal Travel Guide</p>
+</header>
+
+<div class="view-toggle">
+    <button class="view-btn active" id="cardViewBtn" onclick="switchView('card')">✈️ Browse All</button>
+    <button class="view-btn" id="mapViewBtn" onclick="switchView('map')">🗺️ Map</button>
+</div>
+
+<div class="controls">
+    <div id="filterContainer" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <select id="regionFilter" onchange="applyFilters()">
+            <option value="All">🌍 All Regions</option>
+            <option value="Europe">Europe</option>
+            <option value="America">America</option>
+            <option value="Africa">Africa</option>
+            <option value="Asia">Asia</option>
+            <option value="Oceania">Oceania</option>
+        </select>
+
+        <select id="categoryFilter" onchange="applyFilters()">
+            <option value="All">🏷️ All Categories</option>
+            <option value="Country">Country / Nation</option>
+            <option value="City">City / Town</option>
+            <option value="Nature">Nature / Landscape</option>
+            <option value="Building">Building / Monument</option>
+            <option value="Museum">Museum / Culture</option>
+            <option value="Festival">Festival / Event</option>
+            <option value="Thermal Bath">Thermal Bath / Spa</option>
+            <option value="Restaurant">Restaurant / Cafe</option>
+            <option value="Library">Library</option>
+            <option value="Hotel">Hotel / Accommodation</option>
+            <option value="Sculpture">Sculpture / Art</option>
+        </select>
+        
+        <button id="sortBtn" class="sort-btn" onclick="toggleSort()">🛡️ Sort by Safety</button>
+
+        <input type="text" id="searchBar" placeholder="Search..." onkeyup="applyFilters()">
+    </div>
+    
+    <button id="langBtn" onclick="toggleLanguage()">🇯🇵 日本語</button>
+</div>
+
+<div id="cardSection">
+    <div class="container" id="cardContainer"></div>
+</div>
+
+<div id="mapSection">
+    <div id="map"></div>
+    <div class="map-directory" id="mapDirectory"></div>
+</div>
+
+<button onclick="topFunction()" id="backToTop" title="Go to top">⬆</button>
+
+<footer>
+    <p id="footerText">© 2024 Global Wanderlust Project.</p>
+</footer>
+
+<script>
+    let currentLang = 'en'; 
+    let mapInitialized = false;
+    let mapObject = null;
+    let markerLayer = null;
+    let markers = [];
+    let isSortedBySafety = false; 
+
+    const uiText = {
+        en: {
+            title: "Global Wanderlust", subtitle: "Your Personal Travel Guide",
+            searchPlaceholder: "Search...", footer: "© 2024 Global Wanderlust Project.",
+            videoBtn: "▶ Watch Video", googleBtn: "🔍 Google Search",
+            viewDetailsBtn: "View Details", langBtn: "🇯🇵 日本語",
+            menuBrowse: "✈️ Browse All", menuMap: "🗺️ Map",
+            rAll: "🌍 All Regions", cAll: "🏷️ All Categories",
+            safeVeryHigh: "Very Safe", safeHigh: "Safe", safeMed: "Moderate", safeLow: "Caution", safeVeryLow: "High Risk",
+            btnSortSafety: "🛡️ Sort by Safety", btnSortRegion: "📍 Sort by Region"
+        },
+        ja: {
+            title: "Global Wanderlust", subtitle: "あなただけのトラベルガイド",
+            searchPlaceholder: "検索...", footer: "© 2024 Global Wanderlust Project.",
+            videoBtn: "▶ 動画を見る", googleBtn: "🔍 Google検索",
+            viewDetailsBtn: "詳細を見る", langBtn: "🇺🇸 English",
+            menuBrowse: "✈️ 一覧", menuMap: "🗺️ マップ",
+            rAll: "🌍 全ての地域", cAll: "🏷️ 全てのカテゴリー",
+            safeVeryHigh: "非常に安全", safeHigh: "安全", safeMed: "普通", safeLow: "注意", safeVeryLow: "危険",
+            btnSortSafety: "🛡️ 治安順に並べる", btnSortRegion: "📍 地域順に並べる"
+        }
+    };
+
+    // --- DATA (92 ITEMS) ---
+    const travelData = [
+        // EUROPE
+        { coords: [64.1593, -21.8553], region: "Europe", type: "Building", country: { en: "Iceland", ja: "アイスランド" }, city: { en: "Reykjavik", ja: "レイキャビク" }, name: { en: "Imagine Peace Tower", ja: "イマジン・ピース・タワー" }, nickname: { en: "Beacon of Peace", ja: "平和の光" }, desc: { en: "A memorial to John Lennon from Yoko Ono, consisting of a tall tower of light.", ja: "オノ・ヨーコがジョン・レノンに捧げた、光の塔によるモニュメント。" }, season: { en: "Winter (Dark)", ja: "冬 (暗い時期)" }, gpiRank: 1 },
+        { coords: [63.8804, -22.4495], region: "Europe", type: "Thermal Bath", country: { en: "Iceland", ja: "アイスランド" }, city: { en: "Grindavík", ja: "グリンダヴィーク" }, name: { en: "Blue Lagoon", ja: "ブルーラグーン" }, nickname: { en: "The Geothermal Spa", ja: "地熱スパ" }, desc: { en: "A famous geothermal spa located in a lava field with milky blue waters.", ja: "溶岩台地に位置する、乳白色の青いお湯が特徴的な有名な地熱スパ。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 1 },
+        { coords: [53.3441, -6.2566], region: "Europe", type: "Library", country: { en: "Ireland", ja: "アイルランド" }, city: { en: "Dublin", ja: "ダブリン" }, name: { en: "The Library of Trinity College", ja: "トリニティ・カレッジ図書館" }, nickname: { en: "The Long Room", ja: "ロング・ルーム" }, desc: { en: "Home to the Book of Kells and the magnificent Long Room.", ja: "「ケルズの書」と壮大なロング・ルームで有名な図書館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 2 },
+        { coords: [49.8153, 6.1296], region: "Europe", type: "Country", country: { en: "Luxembourg", ja: "ルクセンブルク" }, city: { en: "Luxembourg", ja: "ルクセンブルク" }, name: { en: "Luxembourg", ja: "ルクセンブルク" }, nickname: { en: "The Grand Duchy", ja: "大公国" }, desc: { en: "A small European country known for its fortified medieval old town.", ja: "要塞化された中世の旧市街で知られる、ヨーロッパの小国。" }, season: { en: "Spring/Summer", ja: "春・夏" }, gpiRank: 7 },
+        { coords: [47.5622, 13.6493], region: "Europe", type: "City", country: { en: "Austria", ja: "オーストリア" }, city: { en: "Hallstatt", ja: "ハルシュタット" }, name: { en: "Hallstatt", ja: "ハルシュタット" }, nickname: { en: "The Fairytale Lakeside Village", ja: "おとぎ話のような湖畔の村" }, desc: { en: "A UNESCO World Heritage site frozen in time, squeezed between the lake and mountains.", ja: "湖と山に挟まれた、時間が止まったかのようなユネスコ世界遺産の村。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 3 },
+        { coords: [47.5756, 14.4608], region: "Europe", type: "Library", country: { en: "Austria", ja: "オーストリア" }, city: { en: "Admont", ja: "アドモント" }, name: { en: "The Admont Abbey Library", ja: "アドモント修道院図書館" }, nickname: { en: "Baroque Masterpiece", ja: "バロックの傑作" }, desc: { en: "The largest monastery library in the world, known for its baroque architecture.", ja: "バロック様式の建築で知られる、世界最大の修道院図書館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 3 },
+        { coords: [47.4333, 12.7167], region: "Europe", type: "Hotel", country: { en: "Austria", ja: "オーストリア" }, city: { en: "Leogang", ja: "レオガング" }, name: { en: "Hotel Krallerhof", ja: "ホテル・クララーホフ" }, nickname: { en: "Alpine Luxury", ja: "アルプスの贅沢" }, desc: { en: "A luxurious wellness hotel nestled in the Austrian Alps.", ja: "オーストリア・アルプスに佇む、豪華なウェルネスホテル。" }, season: { en: "Winter/Summer", ja: "冬・夏" }, gpiRank: 3 },
+        { coords: [47.1410, 9.5209], region: "Europe", type: "Country", country: { en: "Liechtenstein", ja: "リヒテンシュタイン" }, city: { en: "Vaduz", ja: "ファドゥーツ" }, name: { en: "Liechtenstein", ja: "リヒテンシュタイン" }, nickname: { en: "The Alpine Microstate", ja: "アルプスの小国" }, desc: { en: "A double-landlocked microstate known for its medieval castles and alpine landscapes.", ja: "中世の城とアルプスの風景で知られる、二重内陸国の小国。" }, season: { en: "Summer/Winter", ja: "夏・冬" }, gpiRank: 2 },
+        { coords: [47.2838, 9.4124], region: "Europe", type: "Restaurant", country: { en: "Switzerland", ja: "スイス" }, city: { en: "Appenzell", ja: "アッペンツェル" }, name: { en: "Aescher", ja: "エッシャー" }, nickname: { en: "Cliffside Guesthouse", ja: "崖の上のゲストハウス" }, desc: { en: "A guesthouse and restaurant built directly into a cliff face.", ja: "崖に直接建てられた、ゲストハウス兼レストラン。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 6 },
+        { coords: [46.0207, 7.7491], region: "Europe", type: "Nature", country: { en: "Switzerland", ja: "スイス" }, city: { en: "Zermatt", ja: "ツェルマット" }, name: { en: "Zermatt", ja: "ツェルマット" }, nickname: { en: "Home of the Matterhorn", ja: "マッターホルンの麓" }, desc: { en: "A car-free village at the foot of the iconic Matterhorn mountain.", ja: "象徴的なマッターホルンの麓にある、自動車乗り入れ禁止の村。" }, season: { en: "Winter/Summer", ja: "冬・夏" }, gpiRank: 6 },
+        { coords: [47.4227, 9.3766], region: "Europe", type: "Library", country: { en: "Switzerland", ja: "スイス" }, city: { en: "St. Gallen", ja: "ザンクト・ガレン" }, name: { en: "The Abbey Library of St. Gall", ja: "ザンクト・ガレン修道院図書館" }, nickname: { en: "Soul Pharmacy", ja: "魂の薬局" }, desc: { en: "One of the oldest and most beautiful libraries in the world, a UNESCO site.", ja: "世界で最も古く美しい図書館の一つであり、ユネスコ世界遺産。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 6 },
+        { coords: [55.6816, 12.5590], region: "Europe", type: "Hotel", country: { en: "Denmark", ja: "デンマーク" }, city: { en: "Copenhagen", ja: "コペンハーゲン" }, name: { en: "Manon Les Suites", ja: "マノン・レ・スイート" }, nickname: { en: "Bali in Copenhagen", ja: "コペンハーゲンのバリ" }, desc: { en: "A luxury hotel with a stunning central pool area resembling Bali.", ja: "バリ島のような美しい中央プールエリアを持つ、高級ホテル。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 8 },
+        { coords: [55.6737, 12.5683], region: "Europe", type: "City", country: { en: "Denmark", ja: "デンマーク" }, city: { en: "Copenhagen", ja: "コペンハーゲン" }, name: { en: "Tivoli Gardens", ja: "チボリ公園" }, nickname: { en: "Fairy Tale Garden", ja: "おとぎの庭" }, desc: { en: "One of the oldest amusement parks in the world, inspiring Disney.", ja: "ディズニーに影響を与えた、世界で最も古い遊園地の一つ。" }, season: { en: "Summer/Xmas", ja: "夏・クリスマス" }, gpiRank: 8 },
+        { coords: [52.3676, 4.9041], region: "Europe", type: "City", country: { en: "Netherlands", ja: "オランダ" }, city: { en: "Amsterdam", ja: "アムステルダム" }, name: { en: "Amsterdam", ja: "アムステルダム" }, nickname: { en: "Venice of the North", ja: "北のベネチア" }, desc: { en: "The capital of the Netherlands, known for its artistic heritage and elaborate canal system.", ja: "芸術的な遺産と精巧な運河システムで知られる、オランダの首都。" }, season: { en: "Spring/Summer", ja: "春・夏" }, gpiRank: 18 },
+        { coords: [52.7424, 6.0792], region: "Europe", type: "City", country: { en: "Netherlands", ja: "オランダ" }, city: { en: "Giethoorn", ja: "ヒートホルン" }, name: { en: "Giethoorn", ja: "ヒートホルン" }, nickname: { en: "The Venice of the North", ja: "北のベネチア" }, desc: { en: "A village with no roads, only canals. Access is by boat or walking bridges.", ja: "道路がなく、水路だけの村。移動はボートか木造の橋を徒歩で。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 18 },
+        { coords: [40.5891, -4.1477], region: "Europe", type: "Library", country: { en: "Spain", ja: "スペイン" }, city: { en: "Madrid", ja: "マドリード" }, name: { en: "The Library of El Escorial", ja: "エル・エスコリアル修道院図書館" }, nickname: { en: "Royal Renaissance", ja: "王室のルネサンス" }, desc: { en: "A magnificent Renaissance library with frescoes on the ceiling.", ja: "天井のフレスコ画が素晴らしい、壮大なルネサンス様式の図書館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 25 },
+        { coords: [36.7462, -5.1612], region: "Europe", type: "City", country: { en: "Spain", ja: "スペイン" }, city: { en: "Ronda", ja: "ロンダ" }, name: { en: "Ronda", ja: "ロンダ" }, nickname: { en: "City on the Cliff", ja: "断崖の上の街" }, desc: { en: "Famous for its dramatic views and the Puente Nuevo bridge spanning the gorge.", ja: "峡谷に架かるヌエボ橋と、劇的な景色で有名です。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 25 },
+        { coords: [43.3183, -1.9812], region: "Europe", type: "City", country: { en: "Spain", ja: "スペイン" }, city: { en: "San Sebastian", ja: "サン・セバスティアン" }, name: { en: "San Sebastian", ja: "サン・セバスティアン" }, nickname: { en: "The Culinary Capital", ja: "美食の都" }, desc: { en: "A resort town known for golden beaches and the highest concentration of Michelin stars.", ja: "黄金のビーチと、世界で最もミシュランの星が密集していることで知られるリゾート地。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 25 },
+        { coords: [38.6366, 0.0381], region: "Europe", type: "Building", country: { en: "Spain", ja: "スペイン" }, city: { en: "Calpe", ja: "カルプ" }, name: { en: "La Muralla Roja", ja: "ラ・ムラジャ・ロハ" }, nickname: { en: "The Red Wall", ja: "赤い壁" }, desc: { en: "A striking postmodern apartment complex by Ricardo Bofill.", ja: "リカルド・ボフィルによる、印象的なポストモダンの集合住宅。" }, season: { en: "Spring/Summer", ja: "春・夏" }, gpiRank: 25 },
+        { coords: [42.6958, 23.3328], region: "Europe", type: "Building", country: { en: "Bulgaria", ja: "ブルガリア" }, city: { en: "Sofia", ja: "ソフィア" }, name: { en: "St. Alexander Nevsky Cathedral", ja: "アレクサンドル・ネフスキー大聖堂" }, nickname: { en: "Orthodox Masterpiece", ja: "正教会の傑作" }, desc: { en: "A Bulgarian Orthodox cathedral in Sofia, one of the largest Eastern Orthodox cathedrals in the world.", ja: "ソフィアにあるブルガリア正教会の大聖堂で、世界最大級の東方正教会の大聖堂の一つ。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 26 },
+        { coords: [65.8340, 20.9634], region: "Europe", type: "Hotel", country: { en: "Sweden", ja: "スウェーデン" }, city: { en: "Harads", ja: "ハラッズ" }, name: { en: "The Mirrorcube", ja: "ミラーキューブ" }, nickname: { en: "Invisible Hotel", ja: "見えないホテル" }, desc: { en: "A treehouse hotel room camouflaged by mirrored walls reflecting the surroundings.", ja: "周囲の景色を映し出す鏡の壁でカモフラージュされた、ツリーハウスホテル。" }, season: { en: "Summer/Winter", ja: "夏・冬" }, gpiRank: 26 },
+        { coords: [59.3435, 18.0548], region: "Europe", type: "Library", country: { en: "Sweden", ja: "スウェーデン" }, city: { en: "Stockholm", ja: "ストックホルム" }, name: { en: "The Stockholm Public Library", ja: "ストックホルム市立図書館" }, nickname: { en: "The Rotunda", ja: "円形ホール" }, desc: { en: "Famous for its cylindrical main hall with open shelves.", ja: "円筒形のメインホールと開架式の棚で有名です。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 26 },
+        { coords: [55.9533, -3.1883], region: "Europe", type: "Festival", country: { en: "United Kingdom", ja: "イギリス" }, city: { en: "Edinburgh", ja: "エディンバラ" }, name: { en: "Hogmanay", ja: "ホグマネイ" }, nickname: { en: "Scottish New Year", ja: "スコットランドの新年" }, desc: { en: "Scotland's world-famous New Year celebration with street parties and fireworks.", ja: "ストリートパーティーや花火で祝う、スコットランドの世界的に有名な新年のお祭り。" }, season: { en: "Dec 31", ja: "12月31日" }, gpiRank: 28 },
+        { coords: [56.0153, 23.4166], region: "Europe", type: "Building", country: { en: "Lithuania", ja: "リトアニア" }, city: { en: "Šiauliai", ja: "シャウレイ" }, name: { en: "The Hill of Crosses", ja: "十字架の丘" }, nickname: { en: "Symbol of Defiance", ja: "抵抗のシンボル" }, desc: { en: "A site of pilgrimage containing an estimated 100,000+ crosses.", ja: "推定10万本以上の十字架が立ち並ぶ、リトアニア・カトリックの巡礼地。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 32 },
+        { coords: [40.5606, 14.2050], region: "Europe", type: "City", country: { en: "Italy", ja: "イタリア" }, city: { en: "Capri", ja: "カプリ島" }, name: { en: "Grotta Azzurra", ja: "青の洞窟" }, nickname: { en: "The Blue Grotto", ja: "青の洞窟" }, desc: { en: "A sea cave where sunlight creates a magical blue reflection inside.", ja: "太陽光が海中を通って洞窟内を照らし、魔法のような青い輝きを生み出す海蝕洞。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 33 },
+        { coords: [45.4408, 12.3155], region: "Europe", type: "Festival", country: { en: "Italy", ja: "イタリア" }, city: { en: "Venice", ja: "ヴェネツィア" }, name: { en: "The Carnival of Venice", ja: "ヴェネツィアのカーニバル" }, nickname: { en: "The Masquerade", ja: "仮面舞踏会" }, desc: { en: "An annual festival famous for its elaborate masks and costumes.", ja: "精巧なマスクと衣装で知られる、世界的に有名な仮面舞踏会の祭り。" }, season: { en: "Feb (Winter)", ja: "2月 (冬)" }, gpiRank: 33 },
+        { coords: [40.6298, 14.4849], region: "Europe", type: "City", country: { en: "Italy", ja: "イタリア" }, city: { en: "Positano", ja: "ポジターノ" }, name: { en: "Positano", ja: "ポジターノ" }, nickname: { en: "Jewel of Amalfi", ja: "アマルフィの宝石" }, desc: { en: "A cliffside village on southern Italy's Amalfi Coast with pebble beaches.", ja: "イタリア南部のアマルフィ海岸にある、断崖絶壁の美しい村。" }, season: { en: "Spring/Summer", ja: "春・夏" }, gpiRank: 33 },
+        { coords: [38.6798, 15.8944], region: "Europe", type: "City", country: { en: "Italy", ja: "イタリア" }, city: { en: "Tropea", ja: "トロペーア" }, name: { en: "Tropea", ja: "トロペーア" }, nickname: { en: "Coast of the Gods", ja: "神々の海岸" }, desc: { en: "A seaside resort with sandy beaches, built on a reef directly over the sea.", ja: "海に面した岩礁の上に建てられた、砂浜のある海辺のリゾート。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 33 },
+        { coords: [40.9959, 17.2206], region: "Europe", type: "Restaurant", country: { en: "Italy", ja: "イタリア" }, city: { en: "Polignano a Mare", ja: "ポリニャーノ・ア・マーレ" }, name: { en: "Grotta Palazzese", ja: "グロッタ・パラツェーゼ" }, nickname: { en: "The Cave Restaurant", ja: "洞窟レストラン" }, desc: { en: "A world-famous restaurant set inside a natural limestone cave overlooking the sea.", ja: "海を見下ろす天然の石灰岩の洞窟内にある、世界的に有名なレストラン。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 33 },
+        { coords: [41.9067, 12.4536], region: "Europe", type: "Museum", country: { en: "Italy", ja: "イタリア" }, city: { en: "Vatican City", ja: "バチカン市国" }, name: { en: "Vatican Museums", ja: "バチカン美術館" }, nickname: { en: "Papal Art", ja: "教皇のアート" }, desc: { en: "Christian and art museums located within the city boundaries of the Vatican City.", ja: "バチカン市国内にある、キリスト教美術を収蔵する美術館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 33 },
+        { coords: [45.4337, 12.3338], region: "Europe", type: "Building", country: { en: "Italy", ja: "イタリア" }, city: { en: "Venice", ja: "ヴェネツィア" }, name: { en: "Teatro La Fenice", ja: "フェニーチェ劇場" }, nickname: { en: "The Phoenix", ja: "不死鳥" }, desc: { en: "A world-renowned opera house with a stunning interior, risen from ashes multiple times.", ja: "何度も灰の中から蘇った、見事な内装を持つ世界的に有名なオペラハウス。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 33 },
+        { coords: [46.5878, 23.7873], region: "Europe", type: "Nature", country: { en: "Romania", ja: "ルーマニア" }, city: { en: "Turda", ja: "トゥルダ" }, name: { en: "Salina Turda", ja: "サリーナ・トゥルダ" }, nickname: { en: "Underground Theme Park", ja: "地下遊園地" }, desc: { en: "An ancient salt mine converted into an underground theme park.", ja: "古代の岩塩坑を改造して作られた地下テーマパーク。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 34 },
+        { coords: [39.9231, 20.1925], region: "Europe", type: "Nature", country: { en: "Albania", ja: "アルバニア" }, city: { en: "Sarandë", ja: "サランダ" }, name: { en: "Blue Eye", ja: "ブルー・アイ" }, nickname: { en: "The Blue Eye", ja: "ブルー・アイ" }, desc: { en: "A water spring and natural phenomenon with clear blue water.", ja: "透明な青い水が湧き出る泉であり、自然現象。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 40 },
+        { coords: [36.4618, 25.3753], region: "Europe", type: "City", country: { en: "Greece", ja: "ギリシャ" }, city: { en: "Oia", ja: "イア" }, name: { en: "Santorini Island", ja: "サントリーニ島" }, nickname: { en: "The Blue and White Dream", ja: "青と白の夢" }, desc: { en: "Famous for its dramatic views, stunning sunsets, and white buildings with blue domes.", ja: "劇的な景色、美しい夕日、そして青いドームの白い建物で有名です。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 57 },
+        { coords: [39.7217, 21.6300], region: "Europe", type: "Building", country: { en: "Greece", ja: "ギリシャ" }, city: { en: "Kalabaka", ja: "カランバカ" }, name: { en: "Meteora", ja: "メテオラ" }, nickname: { en: "The Monasteries in the Sky", ja: "天空の修道院" }, desc: { en: "Eastern Orthodox monasteries built on precipitous rock pillars.", ja: "切り立った岩の柱の上に建てられた、東方正教会の修道院群。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 57 },
+        { coords: [41.7705, 44.8105], region: "Europe", type: "Sculpture", country: { en: "Georgia", ja: "ジョージア" }, city: { en: "Tbilisi", ja: "トビリシ" }, name: { en: "Chronicles of Georgia", ja: "ジョージア・クロニクル" }, nickname: { en: "Stonehenge of Georgia", ja: "ジョージアのストーンヘンジ" }, desc: { en: "A massive bronze, copper, and stone monument recording the history of Georgia.", ja: "ジョージアの歴史を記録した、青銅、銅、石で作られた巨大なモニュメント。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 75 },
+        { coords: [48.6360, -1.5115], region: "Europe", type: "Building", country: { en: "France", ja: "フランス" }, city: { en: "Normandy", ja: "ノルマンディー" }, name: { en: "Mont Saint-Michel", ja: "モン・サン＝ミシェル" }, nickname: { en: "The Floating Abbey", ja: "海に浮かぶ修道院" }, desc: { en: "A gravity-defying medieval monastery perched on a rocky island.", ja: "岩だらけの小島にそびえ立つ、重力に逆らうかのような中世の修道院。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 86 },
+        { coords: [67.6162, 33.6599], region: "Europe", type: "Restaurant", country: { en: "Russia", ja: "ロシア" }, city: { en: "Kirovsk", ja: "キロリスク" }, name: { en: "Plateau Restaurant", ja: "プラトー・レストラン" }, nickname: { en: "Dining Above the Arctic", ja: "北極圏上のダイニング" }, desc: { en: "A panoramic restaurant atop the Khibiny Mountains.", ja: "ヒビヌイ山脈の頂上にあるパノラマレストラン。" }, season: { en: "Winter", ja: "冬" }, gpiRank: 159 },
+        { coords: [53.5587, 108.1650], region: "Europe", type: "Nature", country: { en: "Russia", ja: "ロシア" }, city: { en: "Siberia", ja: "シベリア" }, name: { en: "Lake Baikal", ja: "バイカル湖" }, nickname: { en: "Pearl of Siberia", ja: "シベリアの真珠" }, desc: { en: "The deepest and oldest freshwater lake in the world.", ja: "世界で最も深く、最も古い淡水湖。" }, season: { en: "Winter (Ice)", ja: "冬 (氷)" }, gpiRank: 159 },
+        { coords: [66.7206, 13.6394], region: "Europe", type: "Hotel", country: { en: "Norway", ja: "ノルウェー" }, city: { en: "Meløy", ja: "メーロイ" }, name: { en: "Six Senses Svart", ja: "シックスセンシズ・スヴァルト" }, nickname: { en: "Energy-Positive Hotel", ja: "エネルギー・ポジティブ・ホテル" }, desc: { en: "The world's first energy-positive hotel, located at the foot of the Svartisen glacier.", ja: "スヴァルティセン氷河の麓に位置する、世界初のエネルギー・ポジティブ・ホテル。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 22 },
+        { coords: [50.0865, 14.4114], region: "Europe", type: "Building", country: { en: "Czech Republic", ja: "チェコ" }, city: { en: "Prague", ja: "プラハ" }, name: { en: "Charles Bridge", ja: "カレル橋" }, nickname: { en: "The Gothic Gateway", ja: "ゴシック様式の玄関口" }, desc: { en: "A historic bridge crossing the Vltava river, famous for its baroque statues.", ja: "ヴルタヴァ川に架かる歴史的な橋。バロック様式の彫像で有名です。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 12 },
+        { coords: [49.9616, 15.2882], region: "Europe", type: "Building", country: { en: "Czech Republic", ja: "チェコ" }, city: { en: "Kutná Hora", ja: "クトナー・ホラ" }, name: { en: "Sedlec Ossuary", ja: "セドレツ納骨堂" }, nickname: { en: "The Bone Church", ja: "骸骨教会" }, desc: { en: "A chapel estimated to contain the skeletons of up to 70,000 people, artistically arranged.", ja: "最大7万人の人骨が芸術的に配置・装飾された礼拝堂。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 12 },
+        { coords: [50.0864, 14.3892], region: "Europe", type: "Library", country: { en: "Czech Republic", ja: "チェコ" }, city: { en: "Prague", ja: "プラハ" }, name: { en: "The Strahov Monastery Library", ja: "ストラホフ修道院図書館" }, nickname: { en: "The Philosophical Hall", ja: "哲学の間" }, desc: { en: "A breathtaking historical library with stunning ceiling frescoes.", ja: "天井のフレスコ画が素晴らしい、息をのむような歴史的図書館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 12 },
+        { coords: [50.0833, 14.4167], region: "Europe", type: "Sculpture", country: { en: "Czech Republic", ja: "チェコ" }, city: { en: "Prague", ja: "プラハ" }, name: { en: "Man Hanging Out", ja: "ぶら下がる男" }, nickname: { en: "Sigmund Freud", ja: "ジークムント・フロイト" }, desc: { en: "A sculpture of Sigmund Freud hanging by one hand from a roof.", ja: "屋根から片手でぶら下がっているジークムント・フロイトの彫刻。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 12 },
+        { coords: [60.1741, 24.9382], region: "Europe", type: "Library", country: { en: "Finland", ja: "フィンランド" }, city: { en: "Helsinki", ja: "ヘルシンキ" }, name: { en: "The Central Library Oodi", ja: "中央図書館 Oodi" }, nickname: { en: "Living Room of Helsinki", ja: "ヘルシンキのリビングルーム" }, desc: { en: "A modern architectural marvel serving as a public space.", ja: "公共スペースとして機能する、現代建築の傑作。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 13 },
+        { coords: [60.1730, 24.9252], region: "Europe", type: "Building", country: { en: "Finland", ja: "フィンランド" }, city: { en: "Helsinki", ja: "ヘルシンキ" }, name: { en: "Temppeliaukio Church", ja: "テンペリアウキオ教会" }, nickname: { en: "Rock Church", ja: "岩の教会" }, desc: { en: "A Lutheran church built directly into solid rock.", ja: "固い岩盤をくり抜いて作られた、ルーテル派の教会。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 13 },
+        { coords: [47.5189, 19.0815], region: "Europe", type: "Thermal Bath", country: { en: "Hungary", ja: "ハンガリー" }, city: { en: "Budapest", ja: "ブダペスト" }, name: { en: "Széchenyi Thermal Bath", ja: "セーチェニ温泉" }, nickname: { en: "The Palace of Spas", ja: "温泉の宮殿" }, desc: { en: "The largest medicinal bath in Europe, located in a neo-baroque palace.", ja: "ネオ・バロック様式の宮殿内にある、ヨーロッパ最大級の温泉施設。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 14 },
+        { coords: [47.5071, 19.0456], region: "Europe", type: "Building", country: { en: "Hungary", ja: "ハンガリー" }, city: { en: "Budapest", ja: "ブダペスト" }, name: { en: "Hungarian Parliament Building", ja: "ハンガリー国会議事堂" }, nickname: { en: "Danube Palace", ja: "ドナウの宮殿" }, desc: { en: "A notable landmark of Hungary and a popular tourist destination in Budapest.", ja: "ハンガリーの著名なランドマークであり、ブダペストの人気観光スポット。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 14 },
+        { coords: [44.8654, 15.5820], region: "Europe", type: "Nature", country: { en: "Croatia", ja: "クロアチア" }, city: { en: "Lika-Senj", ja: "リカ＝セニ" }, name: { en: "Plitvice Lakes National Park", ja: "プリトヴィツェ湖群国立公園" }, nickname: { en: "The Cascade Wonderland", ja: "滝のワンダーランド" }, desc: { en: "Famous for its 16 terraced lakes joined by waterfalls extending into a limestone canyon.", ja: "石灰岩の渓谷に広がる16の湖と、それをつなぐ美しい滝で有名です。" }, season: { en: "Spring/Summer", ja: "春・夏" }, gpiRank: 15 },
+        { coords: [45.8150, 15.9742], region: "Europe", type: "Museum", country: { en: "Croatia", ja: "クロアチア" }, city: { en: "Zagreb", ja: "ザグレブ" }, name: { en: "Museum of Broken Relationships", ja: "失恋博物館" }, nickname: { en: "Tribute to Lost Love", ja: "失われた愛への賛歌" }, desc: { en: "A museum dedicated to failed love relationships, featuring personal objects from former lovers.", ja: "終わった恋の思い出の品々を展示する、ユニークで切ない博物館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 15 },
+        { coords: [45.0812, 13.6387], region: "Europe", type: "City", country: { en: "Croatia", ja: "クロアチア" }, city: { en: "Rovinj", ja: "ロヴィニ" }, name: { en: "Rovinj", ja: "ロヴィニ" }, nickname: { en: "Blue Pearl of the Adriatic", ja: "アドリア海の青い真珠" }, desc: { en: "A colorful fishing port on the west coast of the Istrian peninsula.", ja: "イストリア半島の西海岸にある、カラフルな漁港。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 15 },
+        { coords: [51.5363, 14.6409], region: "Europe", type: "Building", country: { en: "Germany", ja: "ドイツ" }, city: { en: "Kromlau", ja: "クロムラウ" }, name: { en: "Rakotz Bridge", ja: "ラコッツ橋" }, nickname: { en: "The Devil’s Bridge", ja: "悪魔の橋" }, desc: { en: "A bridge specifically built to create a perfect circle when reflected in the water.", ja: "水面に映ると完璧な円を描くように設計された、幻想的な橋。" }, season: { en: "Autumn", ja: "秋" }, gpiRank: 20 },
+        { coords: [47.9157, 8.0706], region: "Europe", type: "Nature", country: { en: "Germany", ja: "ドイツ" }, city: { en: "Black Forest", ja: "黒い森" }, name: { en: "Ravenna Gorge", ja: "ラヴェンナ渓谷" }, nickname: { en: "The Viaduct Valley", ja: "高架橋の谷" }, desc: { en: "A scenic gorge famous for its railway viaduct and Christmas market.", ja: "鉄道の高架橋とクリスマスマーケットで有名な、美しい渓谷。" }, season: { en: "Winter (Xmas)", ja: "冬 (クリスマス)" }, gpiRank: 20 },
+        { coords: [48.7904, 9.1830], region: "Europe", type: "Library", country: { en: "Germany", ja: "ドイツ" }, city: { en: "Stuttgart", ja: "シュトゥットガルト" }, name: { en: "The Stuttgart City Library", ja: "シュトゥットガルト市立図書館" }, nickname: { en: "The Cube", ja: "ザ・キューブ" }, desc: { en: "A modern, minimalist library with a striking white interior.", ja: "真っ白なインテリアが印象的な、モダンでミニマルな図書館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 20 },
+        { coords: [58.9414, 5.6713], region: "Europe", type: "Building", country: { en: "Norway", ja: "ノルウェー" }, city: { en: "Stavanger", ja: "スタヴァンゲル" }, name: { en: "Sverd i Fjell", ja: "岩の剣" }, nickname: { en: "Swords in Rock", ja: "岩の剣" }, desc: { en: "A monument commemorating the Battle of Hafrsfjord.", ja: "ハフスフィヨルドの戦いを記念したモニュメント。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 22 },
+        { coords: [78.2232, 15.6267], region: "Europe", type: "Building", country: { en: "Norway", ja: "ノルウェー" }, city: { en: "Svalbard", ja: "スヴァールバル" }, name: { en: "Svalbard Global Seed Vault", ja: "スヴァールバル世界種子貯蔵庫" }, nickname: { en: "The Doomsday Vault", ja: "種子の箱舟" }, desc: { en: "A secure backup facility for the world's crop diversity, located deep inside a mountain in the Arctic.", ja: "北極圏の山中深くにある、世界の農作物の多様性を守るための安全な種子貯蔵施設。" }, season: { en: "Summer/Winter", ja: "夏・冬" }, gpiRank: 22 },
+        { coords: [58.2687, 7.9733], region: "Europe", type: "Library", country: { en: "Norway", ja: "ノルウェー" }, city: { en: "Vennesla", ja: "ヴェネスラ" }, name: { en: "The Vennesla Library", ja: "ヴェネスラ図書館" }, nickname: { en: "Rib Cage Library", ja: "肋骨の図書館" }, desc: { en: "Known for its unique wooden rib-like structure interior.", ja: "木製の肋骨のようなユニークな内部構造で知られています。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 22 },
+        { coords: [46.3683, 14.0938], region: "Europe", type: "Nature", country: { en: "Slovenia", ja: "スロベニア" }, city: { en: "Bled", ja: "ブレッド" }, name: { en: "Lake Bled", ja: "ブレッド湖" }, nickname: { en: "The Alpine Pearl", ja: "アルプスの瞳" }, desc: { en: "A glacial lake famous for its island church and medieval castle.", ja: "湖に浮かぶ小島の教会と、崖の上の古城で知られる氷河湖。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 9 },
+        { coords: [45.5283, 13.5682], region: "Europe", type: "City", country: { en: "Slovenia", ja: "スロベニア" }, city: { en: "Piran", ja: "ピラン" }, name: { en: "Piran", ja: "ピラン" }, nickname: { en: "The Venetian Jewel", ja: "スロベニアのベネチア" }, desc: { en: "One of the most photogenic cities in the Mediterranean with medieval architecture.", ja: "中世の建築が残る、地中海で最もフォトジェニックな街の一つ。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 9 },
+
+        // AMERICA (15 Items)
+        { coords: [24.1843, -76.4526], region: "America", type: "Nature", country: { en: "Bahamas", ja: "バハマ" }, city: { en: "Exuma", ja: "エグズーマ" }, name: { en: "Pig Beach", ja: "ピッグ・ビーチ" }, nickname: { en: "Pig Island", ja: "豚の島" }, desc: { en: "An island populated by swimming feral pigs that greet boats.", ja: "野生の豚がビーチに生息し、泳いでボートを出迎えてくれる島。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 30 },
+        { coords: [-46.6157, -72.6416], region: "America", type: "Nature", country: { en: "Chile", ja: "チリ" }, city: { en: "Puerto Rio Tranquilo", ja: "プエルト・リオ・トランキロ" }, name: { en: "Marble Caves", ja: "マーブル・カテドラル" }, nickname: { en: "The Marble Cathedral", ja: "大理石の大聖堂" }, desc: { en: "Caves formed by waves creating swirling blue marble patterns.", ja: "波の侵食によって形成された、青い大理石の模様が渦巻く洞窟。" }, season: { en: "Dec-Mar", ja: "12月-3月" }, gpiRank: 64 },
+        { coords: [-20.1338, -67.4891], region: "America", type: "Nature", country: { en: "Bolivia", ja: "ボリビア" }, city: { en: "Uyuni", ja: "ウユニ" }, name: { en: "Salar de Uyuni", ja: "ウユニ塩湖" }, nickname: { en: "The World’s Largest Mirror", ja: "世界最大の鏡" }, desc: { en: "The world's largest salt flat. Water transforms it into a giant mirror.", ja: "世界最大の塩原。雨季には水が張り、巨大な鏡へと変貌します。" }, season: { en: "Jan-Mar (Rainy)", ja: "1月-3月 (雨季)" }, gpiRank: 83 },
+        { coords: [-14.0875, -75.7626], region: "America", type: "Nature", country: { en: "Peru", ja: "ペルー" }, city: { en: "Ica", ja: "イカ" }, name: { en: "Huacachina", ja: "ワカチナ" }, nickname: { en: "The Oasis of America", ja: "アメリカのオアシス" }, desc: { en: "A tiny village and desert oasis ringed by palm trees and dunes.", ja: "砂丘とヤシの木に囲まれた、砂漠の中の小さなオアシスの村。" }, season: { en: "May-Aug", ja: "5月-8月" }, gpiRank: 100 },
+        { coords: [36.1215, -115.1623], region: "America", type: "Building", country: { en: "United States", ja: "アメリカ" }, city: { en: "Las Vegas", ja: "ラスベガス" }, name: { en: "The Sphere", ja: "スフィア" }, nickname: { en: "The Exosphere", ja: "エクスソスフィア" }, desc: { en: "A futuristic entertainment arena wrapped in the world's largest LED screen.", ja: "世界最大のLEDスクリーンで覆われた、近未来的なエンターテインメントアリーナ。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 132 },
+        { coords: [39.2974, -76.6152], region: "America", type: "Library", country: { en: "United States", ja: "アメリカ" }, city: { en: "Baltimore", ja: "ボルチモア" }, name: { en: "The George Peabody Library", ja: "ジョージ・ピーボディ図書館" }, nickname: { en: "The Cathedral of Books", ja: "本の聖堂" }, desc: { en: "A stunning 19th-century research library with cast-iron balconies.", ja: "鋳鉄製のバルコニーが特徴的な、19世紀の美しい研究図書館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 132 },
+        { coords: [41.7906, -87.5830], region: "America", type: "Museum", country: { en: "United States", ja: "アメリカ" }, city: { en: "Chicago", ja: "シカゴ" }, name: { en: "Griffin Museum of Science and Industry", ja: "グリフィン科学産業博物館" }, nickname: { en: "Sci-Tech Wonderland", ja: "科学技術のワンダーランド" }, desc: { en: "One of the largest science museums in the world, housed in the former Palace of Fine Arts.", ja: "旧パレス・オブ・ファイン・アーツ内にある、世界最大級の科学博物館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 132 },
+        { coords: [-2.4859, -43.1284], region: "America", type: "Nature", country: { en: "Brazil", ja: "ブラジル" }, city: { en: "Maranhão", ja: "マラニョン" }, name: { en: "Lençóis Maranhenses", ja: "レンソイス・マラニャンセス" }, nickname: { en: "The Desert of Lagoons", ja: "ラグーンの砂漠" }, desc: { en: "White sand dunes with fresh rainwater lagoons in the valleys.", ja: "白い砂丘と、その谷間に溜まった雨水による青いラグーンの絶景。" }, season: { en: "June-Sept", ja: "6月-9月" }, gpiRank: 131 },
+        { coords: [18.6756, -88.3917], region: "America", type: "Nature", country: { en: "Mexico", ja: "メキシコ" }, city: { en: "Bacalar", ja: "バカラル" }, name: { en: "Bacalar Lagoon", ja: "バカラル湖" }, nickname: { en: "The Lagoon of Seven Colors", ja: "七色の湖" }, desc: { en: "Famous for its striking blue color and water clarity.", ja: "その驚くべき青さと透明度で知られる細長い湖。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 139 },
+        { coords: [2.2644, -73.7944], region: "America", type: "Nature", country: { en: "Colombia", ja: "コロンビア" }, city: { en: "La Macarena", ja: "ラ・マカレナ" }, name: { en: "Caño Cristales", ja: "キャノ・クリスタレス" }, nickname: { en: "The River of Five Colors", ja: "五色の川" }, desc: { en: "The river bursts into vibrant red, yellow, and green colors due to aquatic plants.", ja: "水生植物の影響で、川が赤・黄・緑などの鮮やかな色に染まります。" }, season: { en: "July-Nov", ja: "7月-11月" }, gpiRank: 146 },
+        { coords: [9.3333, -71.7167], region: "America", type: "Nature", country: { en: "Venezuela", ja: "ベネズエラ" }, city: { en: "Lake Maracaibo", ja: "マラカイボ湖" }, name: { en: "Catatumbo", ja: "カタトゥンボの雷" }, nickname: { en: "The Everlasting Storm", ja: "永遠の嵐" }, desc: { en: "An atmospheric phenomenon where lightning occurs up to 280 times per hour.", ja: "一時間に最大280回もの雷が発生する、世界で最も雷が多い場所。" }, season: { en: "Apr-Nov", ja: "4月-11月" }, gpiRank: 147 },
+
+        // AFRICA (2 Items)
+        { coords: [-24.7592, 15.2926], region: "Africa", type: "Nature", country: { en: "Namibia", ja: "ナミビア" }, city: { en: "Namib-Naukluft", ja: "ナミブ＝ナウクルフト" }, name: { en: "Deadvlei", ja: "デッドフレイ" }, nickname: { en: "The Dead Marsh", ja: "死の沼地" }, desc: { en: "Dark, dead trees contrasted against white clay and orange dunes.", ja: "白い粘土質の地面、オレンジ色の砂丘、そして黒く枯れた木のコントラスト。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 50 },
+        { coords: [35.1716, -5.2697], region: "Africa", type: "City", country: { en: "Morocco", ja: "モロッコ" }, city: { en: "Chefchaouen", ja: "シャウエン" }, name: { en: "Chefchaouen", ja: "シャウエン" }, nickname: { en: "The Blue City", ja: "青い街" }, desc: { en: "A mountain city known for its striking, blue-washed buildings.", ja: "建物が鮮やかな青色に塗られた、山間にある美しい街。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 78 },
+
+        // ASIA (18 Items)
+        { coords: [5.9804, 116.0735], region: "Asia", type: "Nature", country: { en: "Malaysia", ja: "マレーシア" }, city: { en: "Kota Kinabalu", ja: "コタキナバル" }, name: { en: "Kota Kinabalu Wetlands", ja: "コタキナバル湿地" }, nickname: { en: "The Firefly Coast", ja: "ホタルの海岸" }, desc: { en: "Mangrove wetlands that transform into a display of thousands of fireflies.", ja: "夜になると数千匹のホタルが瞬く、幻想的なマングローブの湿地帯。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 10 },
+        { coords: [25.1095, 121.8449], region: "Asia", type: "City", country: { en: "Taiwan", ja: "台湾" }, city: { en: "New Taipei City", ja: "新北" }, name: { en: "Jiufen", ja: "九份" }, nickname: { en: "The Spirited Away Town", ja: "千と千尋の神隠しの街" }, desc: { en: "A mountain town with narrow alleyways, tea houses, and lanterns.", ja: "狭い路地、茶屋、赤い提灯が並ぶ、ノスタルジックな山あいの街。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 35 },
+        { coords: [23.8687, 120.9416], region: "Asia", type: "Museum", country: { en: "Taiwan", ja: "台湾" }, city: { en: "Nantou", ja: "南投" }, name: { en: "Formosan Aboriginal Culture Village", ja: "九族文化村" }, nickname: { en: "Taiwan’s Sakura Park", ja: "台湾の桜の名所" }, desc: { en: "A theme park celebrating indigenous heritage that turns pink during cherry blossom season.", ja: "先住民族の文化をテーマにしたパーク。春には桜が満開になり、ピンク色に染まります。" }, season: { en: "Feb (Sakura)", ja: "2月 (桜)" }, gpiRank: 35 },
+        { coords: [3.2028, 73.2207], region: "Asia", type: "Country", country: { en: "Maldives", ja: "モルディブ" }, city: { en: "Maldives", ja: "モルディブ" }, name: { en: "Maldives", ja: "モルディブ" }, nickname: { en: "The Pearl of the Indian Ocean", ja: "インド洋の真珠" }, desc: { en: "An archipelagic nation known for its extensive reefs, blue lagoons, and luxury villas.", ja: "広大なサンゴ礁、青いラグーン、そして水上ヴィラで知られる島国。" }, season: { en: "Nov-Apr", ja: "11月-4月" }, gpiRank: 40 },
+        { coords: [15.8801, 108.3380], region: "Asia", type: "Festival", country: { en: "Vietnam", ja: "ベトナム" }, city: { en: "Hoi An", ja: "ホイアン" }, name: { en: "Hoi An Lantern Festival", ja: "ホイアン・ランタン祭り" }, nickname: { en: "Lights of the Old Town", ja: "古都の灯り" }, desc: { en: "A magical monthly event where the ancient town turns off electric lights and glows with thousands of silk lanterns.", ja: "毎月満月の夜、電気を消して数千のランタンの明かりだけで古都が照らされる幻想的な祭り。" }, season: { en: "Full Moon", ja: "満月" }, gpiRank: 40 },
+        { coords: [37.5113, 127.0596], region: "Asia", type: "Library", country: { en: "South Korea", ja: "韓国" }, city: { en: "Seoul", ja: "ソウル" }, name: { en: "Starfield Library", ja: "ピョルマダン図書館" }, nickname: { en: "Book Lover’s Paradise", ja: "本好きの楽園" }, desc: { en: "A futuristic library in COEX Mall with towering bookshelves.", ja: "COEXモール内にある、天井まで届く巨大な本棚が特徴的な近未来的な図書館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 46 },
+        { coords: [-8.0583, 114.2417], region: "Asia", type: "Nature", country: { en: "Indonesia", ja: "インドネシア" }, city: { en: "East Java", ja: "東ジャワ" }, name: { en: "Kawah Ijen", ja: "イジェン火山" }, nickname: { en: "The Blue Fire Volcano", ja: "青い炎の火山" }, desc: { en: "Famous for its turquoise acidic lake and electric-blue flames visible at night.", ja: "ターコイズブルーの酸性湖と、夜に見られる電気のような青い炎で有名です。" }, season: { en: "Dry Season (July-Sept)", ja: "乾季 (7月-9月)" }, gpiRank: 48 },
+        { coords: [42.9840, 78.4650], region: "Asia", type: "Nature", country: { en: "Kazakhstan", ja: "カザフスタン" }, city: { en: "Tian Shan", ja: "天山山脈" }, name: { en: "Lake Kaindy", ja: "カインディ湖" }, nickname: { en: "The Sunken Forest Lake", ja: "沈んだ森の湖" }, desc: { en: "Contains a submerged forest of spruce trees that rise out of the water.", ja: "湖面から突き出たトウヒの木々が「沈んだ森」を形成している神秘的な湖。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 68 },
+        { coords: [19.9247, 99.8251], region: "Asia", type: "Hotel", country: { en: "Thailand", ja: "タイ" }, city: { en: "Chiang Rai", ja: "チェンライ" }, name: { en: "Tramont Cafe & Glamping", ja: "トラモント・カフェ＆グランピング" }, nickname: { en: "Mountain Retreat", ja: "山の隠れ家" }, desc: { en: "A scenic glamping spot in the mountains of Chiang Rai offering breathtaking views.", ja: "チェンライの山中にある、息をのむような景色を楽しめるグランピングスポット。" }, season: { en: "Nov-Feb", ja: "11月-2月" }, gpiRank: 75 },
+        { coords: [18.7883, 98.9853], region: "Asia", type: "Festival", country: { en: "Thailand", ja: "タイ" }, city: { en: "Chiang Mai", ja: "チェンマイ" }, name: { en: "Yi Peng Festival", ja: "コムローイ祭り" }, nickname: { en: "The Lantern Festival", ja: "ランタン祭り" }, desc: { en: "Thousands of paper lanterns are released into the night sky.", ja: "数千個のランタンが一斉に夜空に放たれる、息をのむほど美しいお祭り。" }, season: { en: "Nov (Full Moon)", ja: "11月 (満月)" }, gpiRank: 75 },
+        { coords: [19.8242, 99.7630], region: "Asia", type: "Building", country: { en: "Thailand", ja: "タイ" }, city: { en: "Chiang Rai", ja: "チェンライ" }, name: { en: "Wat Rong Khun", ja: "ワット・ロンクン" }, nickname: { en: "The White Temple", ja: "ホワイト・テンプル" }, desc: { en: "A contemporary, unconventional art exhibit in the style of a Buddhist temple.", ja: "純白の装飾が施された、現代的で独創的な仏教寺院（芸術作品）。" }, season: { en: "Nov-Feb", ja: "11月-2月" }, gpiRank: 75 },
+        { coords: [40.2522, 58.4397], region: "Asia", type: "Nature", country: { en: "Turkmenistan", ja: "トルクメニスタン" }, city: { en: "Derweze", ja: "ダルヴァザ" }, name: { en: "Darvaza Gas Crater", ja: "地獄の門" }, nickname: { en: "The Door to Hell", ja: "地獄の門" }, desc: { en: "A natural gas crater that has been burning continuously since 1971.", ja: "1971年から燃え続けている、巨大な天然ガスのクレーター。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 87 },
+        { coords: [39.0069, 117.6593], region: "Asia", type: "Library", country: { en: "China", ja: "中国" }, city: { en: "Tianjin", ja: "天津" }, name: { en: "The Tianjin Binhai Library", ja: "天津浜海図書館" }, nickname: { en: "The Eye", ja: "ザ・アイ" }, desc: { en: "A futuristic library featuring a luminous spherical auditorium.", ja: "光る球体の講堂が特徴的な、近未来的な図書館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 88 },
+        { coords: [28.8475, 118.0264], region: "Asia", type: "Nature", country: { en: "China", ja: "中国" }, city: { en: "Jiangxi", ja: "江西" }, name: { en: "Wangxian Valley", ja: "望仙谷" }, nickname: { en: "Cliffside Village", ja: "崖の上の村" }, desc: { en: "A magical village built on cliffs with hanging houses and waterfalls.", ja: "崖の上に建てられた家々と滝が織りなす、魔法のような村。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 88 },
+        { coords: [28.8416, 109.9452], region: "Asia", type: "City", country: { en: "China", ja: "中国" }, city: { en: "Hunan", ja: "湖南" }, name: { en: "Furong Town", ja: "芙蓉鎮" }, nickname: { en: "Waterfall Town", ja: "滝の上の町" }, desc: { en: "An ancient town built directly over a massive waterfall.", ja: "巨大な滝の上に直接建てられた、歴史ある古都。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 88 },
+        { coords: [29.5630, 106.5516], region: "Asia", type: "Restaurant", country: { en: "China", ja: "中国" }, city: { en: "Chongqing", ja: "重慶" }, name: { en: "Luori Tea Collection", ja: "落日野茶集" }, nickname: { en: "Sunset & Tea", ja: "夕日と茶" }, desc: { en: "A stunning blend of traditional tea culture and modern urban views at sunset.", ja: "夕暮れ時の絶景と伝統的なお茶文化が融合した、重慶の隠れた名所。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 88 },
+        { coords: [28.6558, 120.6120], region: "Asia", type: "Building", country: { en: "China", ja: "中国" }, city: { en: "Zhejiang", ja: "浙江" }, name: { en: "Ruyi Bridge", ja: "如意橋" }, nickname: { en: "The Bending Bridge", ja: "如意の橋" }, desc: { en: "A bending, double-deck glass bridge designed to look like a 'ruyi' scepter.", ja: "「如意」の笏のように見えるように設計された、曲がりくねった2層のガラス橋。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 88 },
+        { coords: [31.0006, 103.6141], region: "Asia", type: "Library", country: { en: "China", ja: "中国" }, city: { en: "Dujiangyan", ja: "都江堰" }, name: { en: "Dujiangyan Zhongshuge", ja: "都江堰 鍾書閣" }, nickname: { en: "Mirror Bookstore", ja: "鏡の本屋" }, desc: { en: "A surreal bookstore featuring mirrored ceilings and towering curved bookshelves.", ja: "鏡張りの天井とそびえ立つ湾曲した本棚が特徴的な、シュールな書店。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 88 },
+        { coords: [39.6611, 66.9757], region: "Asia", type: "Building", country: { en: "Uzbekistan", ja: "ウズベキスタン" }, city: { en: "Samarkand", ja: "サマルカンド" }, name: { en: "Shah-i-Zinda", ja: "シャー・イ・ズィンダ" }, nickname: { en: "The Street of Tombs", ja: "死者の通り" }, desc: { en: "A necropolis showcasing some of the richest blue tilework in the Muslim world.", ja: "イスラム世界で最も豊かな青いタイル装飾が見られる霊廟群。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 96 },
+        { coords: [37.9250, 29.1207], region: "Asia", type: "Thermal Bath", country: { en: "Turkey", ja: "トルコ" }, city: { en: "Denizli", ja: "デニズリ" }, name: { en: "Pamukkale", ja: "パムッカレ" }, nickname: { en: "The Cotton Castle", ja: "綿の城" }, desc: { en: "White travertine terraces filled with thermal spring water.", ja: "温泉水が作り出した、真っ白な石灰棚が棚田のように広がる絶景。" }, season: { en: "Spring", ja: "春" }, gpiRank: 140 },
+        { coords: [38.3802, 34.7865], region: "Asia", type: "City", country: { en: "Turkey", ja: "トルコ" }, city: { en: "Nevşehir", ja: "ネヴシェヒル" }, name: { en: "Cappadocia Underground Cities", ja: "カッパドキア地下都市" }, nickname: { en: "The Subterranean World", ja: "地下世界" }, desc: { en: "Vast ancient underground cities like Derinkuyu, used as hiding places.", ja: "かつて隠れ家として使われた、デリンクユなどの広大な古代地下都市。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 140 },
+        { coords: [12.4634, 53.8237], region: "Asia", type: "Nature", country: { en: "Yemen", ja: "イエメン" }, city: { en: "Socotra", ja: "ソコトラ島" }, name: { en: "Socotra Island", ja: "ソコトラ島" }, nickname: { en: "The Galápagos of the Indian Ocean", ja: "インド洋のガラパゴス" }, desc: { en: "Known for its alien-like landscapes and the umbrella-shaped Dragon Blood Trees.", ja: "まるで異星のような風景と、傘のような形の「竜血樹」で知られる島。" }, season: { en: "Oct-Apr", ja: "10月-4月" }, gpiRank: 163 },
+
+        // OCEANIA (5 Items)
+        { coords: [-38.2609, 175.1035], region: "Oceania", type: "Nature", country: { en: "New Zealand", ja: "ニュージーランド" }, city: { en: "Waitomo", ja: "ワイトモ" }, name: { en: "Waitomo Glowworm Caves", ja: "ワイトモ洞窟" }, nickname: { en: "The Glowworm Grotto", ja: "土ボタルの洞窟" }, desc: { en: "A cave system illuminated by thousands of tiny glowworms.", ja: "何千もの土ボタルが青白い光を放つ、幻想的な洞窟。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 4 },
+        { coords: [-44.0047, 170.4771], region: "Oceania", type: "Nature", country: { en: "New Zealand", ja: "ニュージーランド" }, city: { en: "Mackenzie Basin", ja: "マッケンジー盆地" }, name: { en: "Lake Tekapo", ja: "テカポ湖" }, nickname: { en: "The Stargazing Lake", ja: "星空の湖" }, desc: { en: "Part of a Dark Sky Reserve, offering some of the best stargazing on earth.", ja: "ダークスカイ保護区の一部であり、世界最高峰の星空観測スポット。" }, season: { en: "Nov-Dec (Lupins)", ja: "11月-12月 (ルピナス)" }, gpiRank: 4 },
+        { coords: [-35.0456, 150.6865], region: "Oceania", type: "Nature", country: { en: "Australia", ja: "オーストラリア" }, city: { en: "Jervis Bay", ja: "ジャービス・ベイ" }, name: { en: "Jervis Bay", ja: "ジャービス・ベイ" }, nickname: { en: "The Bioluminescent Beach", ja: "光るビーチ" }, desc: { en: "Famous for white sand and bioluminescent plankton glowing blue at night.", ja: "真っ白な砂浜と、夜になると青く光る夜光虫で有名です。" }, season: { en: "Summer (Nights)", ja: "夏 (夜)" }, gpiRank: 19 },
+        { coords: [-34.0950, 123.2028], region: "Oceania", type: "Nature", country: { en: "Australia", ja: "オーストラリア" }, city: { en: "Middle Island", ja: "ミドル島" }, name: { en: "Lake Hillier", ja: "ヒリアー湖" }, nickname: { en: "The Pink Lake", ja: "ピンクレイク" }, desc: { en: "A saline lake that retains its bubblegum pink color permanently.", ja: "バブルガムのようなピンク色が特徴的な塩湖。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 19 },
+        { coords: [-16.75, 179.66], region: "Oceania", type: "Hotel", country: { en: "Fiji", ja: "フィジー" }, city: { en: "Laucala Island", ja: "ラウカラ島" }, name: { en: "COMO Laucala Island", ja: "コモ・ラウカラ・アイランド" }, nickname: { en: "Private Paradise", ja: "プライベート・パラダイス" }, desc: { en: "An exclusive private island resort offering unparalleled luxury and privacy.", ja: "比類のない贅沢とプライバシーを提供する、高級プライベートアイランドリゾート。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 40 }
+    ];
+
+    const cardContainer = document.getElementById('cardContainer');
+    let filterState = { region: 'All', category: 'All' };
+
+    // --- Core Functions ---
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'en' ? 'ja' : 'en';
+        updateUI();
+        applyFilters(); 
+        if (mapInitialized) {
+            updateMapPopups(); 
+            renderMapDirectory();
+        }
+    }
+
+    function updateUI() {
+        const text = uiText[currentLang];
+        document.getElementById('title').innerText = text.title;
+        document.getElementById('subtitle').innerText = text.subtitle;
+        document.getElementById('langBtn').innerText = text.langBtn;
+        document.getElementById('searchBar').placeholder = text.searchPlaceholder;
+        document.getElementById('footerText').innerText = text.footer;
+        
+        document.getElementById('cardViewBtn').innerHTML = text.menuBrowse;
+        document.getElementById('mapViewBtn').innerHTML = text.menuMap;
+
+        document.getElementById('regionFilter').options[0].text = text.rAll;
+        document.getElementById('categoryFilter').options[0].text = text.cAll;
+        
+        updateSortButtonText();
+    }
+    
+    function updateSortButtonText() {
+        const btn = document.getElementById('sortBtn');
+        const text = uiText[currentLang];
+        if (isSortedBySafety) {
+            btn.innerHTML = text.btnSortRegion;
+            btn.classList.add('active');
+        } else {
+            btn.innerHTML = text.btnSortSafety;
+            btn.classList.remove('active');
+        }
+    }
+
+    function toggleSort() {
+        isSortedBySafety = !isSortedBySafety;
+        updateSortButtonText();
+        applyFilters(); 
+    }
+
+    // --- Card Logic ---
+    function createCardHTML(place) {
+        const filename = place.name.en + ".jpg";
+        const localSrc = `bucket list images/${filename}`;
+        const fallbackSrc = `https://placehold.co/600x400/2c3e50/white?text=${encodeURIComponent(place.name.en)}`;
+        const text = uiText[currentLang];
+
+        const nicknameHTML = place.nickname[currentLang] ? `<div class="nickname">"${place.nickname[currentLang]}"</div>` : `<div class="nickname"></div>`;
+        const seasonHTML = place.season ? `<div class="meta-item"><span>📅 ${place.season[currentLang]}</span></div>` : '';
+        const cardId = 'card-' + place.name.en.replace(/\s+/g, '-');
+
+        let safeLabel = "", safeIcon = "";
+        // Logic for Tier Display based on GPI Rank
+        // 1-13 Very High (Blue), 14-46 High (Green), 47-85 Medium (Yellow), 86-140 Low (Orange), >140 Very Low (Red)
+        if (place.gpiRank <= 13) { safeLabel = text.safeVeryHigh; safeIcon = "🔵"; }
+        else if (place.gpiRank <= 46) { safeLabel = text.safeHigh; safeIcon = "🟢"; }
+        else if (place.gpiRank <= 85) { safeLabel = text.safeMed; safeIcon = "🟡"; }
+        else if (place.gpiRank <= 140) { safeLabel = text.safeLow; safeIcon = "🟠"; }
+        else { safeLabel = text.safeVeryLow; safeIcon = "🔴"; }
+
+        // Hide location if type is Country
+        const locationHTML = (place.type === 'Country') ? '' : `<div class="meta-item">📍 ${place.city[currentLang]}</div>`;
+
+        return `
+        <div class="card" id="${cardId}">
+            <div class="card-img-container">
+                <img src="${localSrc}" alt="${place.name[currentLang]}" onerror="this.onerror=null;this.src='${fallbackSrc}';">
+            </div>
+            <div class="card-body">
+                <div class="country">${place.country[currentLang]}</div>
+                <h3 class="place-name">${place.name[currentLang]}</h3>
+                ${nicknameHTML}
+                
+                <div class="meta-info">
+                    ${locationHTML}
+                    ${seasonHTML}
+                    <div class="meta-item">${safeIcon} ${safeLabel}</div>
+                </div>
+
+                <p class="place-desc">${place.desc[currentLang]}</p>
+                <div class="actions">
+                    <a href="https://www.youtube.com/results?search_query=${place.name.en}+travel" target="_blank" class="action-link video-link">
+                        ${text.videoBtn}
+                    </a>
+                    <a href="https://www.google.com/search?q=${place.name.en}+travel" target="_blank" class="action-link google-link">
+                        ${text.googleBtn}
+                    </a>
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
+    function renderCards(data) {
+        cardContainer.innerHTML = '';
+
+        if (isSortedBySafety) {
+            // Sort strict by GPI Rank (Ascending: 1 -> 163)
+            const sortedData = [...data].sort((a, b) => a.gpiRank - b.gpiRank);
+            
+            // Render Flat Grid (No Region Headers)
+            const grid = document.createElement('div');
+            grid.className = 'card-grid';
+            sortedData.forEach(place => {
+                grid.innerHTML += createCardHTML(place);
+            });
+            cardContainer.appendChild(grid);
+            
+        } else {
+            // Standard View: Group by Region (Ordered)
+            const regionsOrder = ['Europe', 'America', 'Africa', 'Asia', 'Oceania']; // Europe First
+            const groupedByRegion = {};
+            
+            data.forEach(item => {
+                if(!groupedByRegion[item.region]) groupedByRegion[item.region] = [];
+                groupedByRegion[item.region].push(item);
+            });
+
+            // Iterate regions
+            regionsOrder.forEach(region => {
+                if(groupedByRegion[region] && groupedByRegion[region].length > 0) {
+                    
+                    const countryMap = {};
+                    groupedByRegion[region].forEach(place => {
+                        const cName = place.country.en;
+                        if (!countryMap[cName]) {
+                            countryMap[cName] = { 
+                                name: cName, 
+                                items: [], 
+                                sumLon: 0 
+                            };
+                        }
+                        countryMap[cName].items.push(place);
+                        countryMap[cName].sumLon += place.coords[1];
+                    });
+
+                    // Sort countries by average longitude
+                    const sortedCountryGroups = Object.values(countryMap).sort((a, b) => {
+                        const avgA = a.sumLon / a.items.length;
+                        const avgB = b.sumLon / b.items.length;
+                        return avgA - avgB;
+                    });
+
+                    // Flatten back to a list of places
+                    const sortedPlaces = [];
+                    sortedCountryGroups.forEach(group => {
+                        group.items.forEach(p => sortedPlaces.push(p));
+                    });
+
+                    // Render Section
+                    const section = document.createElement('div');
+                    section.className = 'region-section';
+                    
+                    const title = document.createElement('h2');
+                    title.className = 'region-title';
+                    title.innerText = region; 
+                    section.appendChild(title);
+
+                    const grid = document.createElement('div');
+                    grid.className = 'card-grid';
+                    
+                    sortedPlaces.forEach(place => {
+                        grid.innerHTML += createCardHTML(place);
+                    });
+
+                    section.appendChild(grid);
+                    cardContainer.appendChild(section);
+                }
+            });
+        }
+        
+        if (data.length === 0) {
+            cardContainer.innerHTML = '<p style="text-align:center; padding:20px;">No places found matching filters.</p>';
+        }
+    }
+
+    // --- Search & Filter Logic ---
+    function applyFilters() {
+        const regionVal = document.getElementById('regionFilter').value;
+        const catVal = document.getElementById('categoryFilter').value;
+        const searchVal = document.getElementById('searchBar').value.toLowerCase();
+
+        let filteredData = travelData.filter(item => {
+            if (regionVal !== 'All' && item.region !== regionVal) return false;
+            if (catVal !== 'All' && item.type !== catVal) return false;
+            if (searchVal) {
+                const matchName = item.name[currentLang].toLowerCase().includes(searchVal);
+                const matchCountry = item.country[currentLang].toLowerCase().includes(searchVal);
+                if (!matchName && !matchCountry) return false;
+            }
+            return true;
+        });
+
+        renderCards(filteredData);
+        updateMapMarkers(filteredData);
+    }
+
+    // --- View Switcher ---
+    function switchView(view) {
+        const cardSection = document.getElementById('cardSection');
+        const mapSection = document.getElementById('mapSection');
+        const cardBtn = document.getElementById('cardViewBtn');
+        const mapBtn = document.getElementById('mapViewBtn');
+        const filterContainer = document.getElementById('filterContainer');
+
+        if (view === 'card') {
+            cardSection.style.display = 'block';
+            mapSection.style.display = 'none';
+            cardBtn.classList.add('active');
+            mapBtn.classList.remove('active');
+            filterContainer.classList.remove('hidden-filters');
+        } else {
+            cardSection.style.display = 'none';
+            mapSection.style.display = 'block';
+            mapBtn.classList.add('active');
+            cardBtn.classList.remove('active');
+            filterContainer.classList.add('hidden-filters'); 
+            
+            if (!mapInitialized) initMap();
+            setTimeout(() => { if(mapObject) mapObject.invalidateSize(); }, 100);
+        }
+    }
+
+    function goToCard(placeNameEn) {
+        switchView('card');
+        const cardId = 'card-' + placeNameEn.replace(/\s+/g, '-');
+        setTimeout(() => {
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.remove('highlight-card');
+                void card.offsetWidth; 
+                card.classList.add('highlight-card');
+            }
+        }, 100);
+    }
+
+    // --- Back to Top ---
+    const topButton = document.getElementById("backToTop");
+    window.onscroll = function() {
+        topButton.style.display = (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) ? "block" : "none";
+    };
+    function topFunction() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- Map Logic ---
+    function initMap() {
+        mapObject = L.map('map').setView([25, 0], 2);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(mapObject);
+
+        markerLayer = L.layerGroup().addTo(mapObject);
+        updateMapMarkers(travelData);
+        renderMapDirectory();
+        mapInitialized = true;
+    }
+
+    function updateMapMarkers(data) {
+        if (!mapObject || !markerLayer) return;
+        markerLayer.clearLayers();
+        markers = [];
+        const btnText = uiText[currentLang].viewDetailsBtn;
+
+        data.forEach(place => {
+            const marker = L.marker(place.coords);
+            marker.placeData = place; 
+            const filename = place.name.en + ".jpg";
+            const localSrc = `bucket list images/${filename}`;
+            const fallbackSrc = `https://placehold.co/600x400/2c3e50/white?text=${encodeURIComponent(place.name.en)}`;
+
+            const popupContent = `
+                <div>
+                    <img src="${localSrc}" class="popup-img" onerror="this.onerror=null;this.src='${fallbackSrc}';">
+                    <span class="popup-title">${place.name[currentLang]}</span>
+                    <small>${place.country[currentLang]} • ${place.city[currentLang]}</small>
+                    <button class="popup-btn" onclick="goToCard('${place.name.en}')">${btnText}</button>
+                </div>
+            `;
+            marker.bindPopup(popupContent);
+            markerLayer.addLayer(marker);
+            markers.push(marker);
+        });
+    }
+
+    function updateMapPopups() {
+        if (!mapObject || !markerLayer) return;
+        updateMapMarkers(travelData); 
+    }
+
+    function renderMapDirectory() {
+        const directory = document.getElementById('mapDirectory');
+        const grouped = {}; 
+        travelData.forEach(place => {
+            const r = place.region;
+            const c = place.country[currentLang];
+            if (!grouped[r]) grouped[r] = new Set();
+            grouped[r].add(c);
+        });
+
+        let html = '';
+        ['Europe', 'America', 'Africa', 'Asia', 'Oceania'].forEach(region => {
+            if (grouped[region]) {
+                html += `<div class="region-group"><h3 onclick="zoomToRegion('${region}')">${region}</h3><ul class="country-list">`;
+                Array.from(grouped[region]).forEach(countryName => {
+                    const count = travelData.filter(t => t.country[currentLang] === countryName).length;
+                    html += `<li onclick="zoomToCountry('${countryName}')">${countryName} (${count})</li>`;
+                });
+                html += `</ul></div>`;
+            }
+        });
+        directory.innerHTML = html;
+    }
+
+    window.zoomToRegion = function(region) {
+        const relevantMarkers = markers.filter(m => m.placeData.region === region);
+        if (relevantMarkers.length > 0) {
+            const group = L.featureGroup(relevantMarkers);
+            mapObject.fitBounds(group.getBounds(), { padding: [50, 50] });
+        }
+    }
+
+    window.zoomToCountry = function(countryName) {
+        const relevantMarkers = markers.filter(m => m.placeData.country[currentLang] === countryName);
+        if (relevantMarkers.length > 0) {
+            const group = L.featureGroup(relevantMarkers);
+            mapObject.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 6 });
+        }
+    }
+
+    // Initial Load
+    renderCards(travelData);
+
+</script>
+
+</body>
+</html>
