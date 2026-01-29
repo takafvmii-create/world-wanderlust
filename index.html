@@ -77,7 +77,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        /* Controls Section */
+        /* Controls Section - UPDATED: Removed sticky positioning */
         .controls {
             display: flex;
             justify-content: center;
@@ -85,9 +85,9 @@
             padding: 15px 20px;
             background: #fff;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            /* position: sticky;  <-- REMOVED */
+            /* top: 0;            <-- REMOVED */
+            /* z-index: 100;      <-- REMOVED */
             min-height: 70px;
         }
 
@@ -348,9 +348,9 @@
         }
     };
 
-    // --- DATA (92 ITEMS) ---
+    // --- DATA (99 ITEMS) ---
     const travelData = [
-        // EUROPE
+        // EUROPE (59 Items)
         { coords: [64.1593, -21.8553], region: "Europe", type: "Building", country: { en: "Iceland", ja: "アイスランド" }, city: { en: "Reykjavik", ja: "レイキャビク" }, name: { en: "Imagine Peace Tower", ja: "イマジン・ピース・タワー" }, nickname: { en: "Beacon of Peace", ja: "平和の光" }, desc: { en: "A memorial to John Lennon from Yoko Ono, consisting of a tall tower of light.", ja: "オノ・ヨーコがジョン・レノンに捧げた、光の塔によるモニュメント。" }, season: { en: "Winter (Dark)", ja: "冬 (暗い時期)" }, gpiRank: 1 },
         { coords: [63.8804, -22.4495], region: "Europe", type: "Thermal Bath", country: { en: "Iceland", ja: "アイスランド" }, city: { en: "Grindavík", ja: "グリンダヴィーク" }, name: { en: "Blue Lagoon", ja: "ブルーラグーン" }, nickname: { en: "The Geothermal Spa", ja: "地熱スパ" }, desc: { en: "A famous geothermal spa located in a lava field with milky blue waters.", ja: "溶岩台地に位置する、乳白色の青いお湯が特徴的な有名な地熱スパ。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 1 },
         { coords: [53.3441, -6.2566], region: "Europe", type: "Library", country: { en: "Ireland", ja: "アイルランド" }, city: { en: "Dublin", ja: "ダブリン" }, name: { en: "The Library of Trinity College", ja: "トリニティ・カレッジ図書館" }, nickname: { en: "The Long Room", ja: "ロング・ルーム" }, desc: { en: "Home to the Book of Kells and the magnificent Long Room.", ja: "「ケルズの書」と壮大なロング・ルームで有名な図書館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 2 },
@@ -411,7 +411,7 @@
         { coords: [46.3683, 14.0938], region: "Europe", type: "Nature", country: { en: "Slovenia", ja: "スロベニア" }, city: { en: "Bled", ja: "ブレッド" }, name: { en: "Lake Bled", ja: "ブレッド湖" }, nickname: { en: "The Alpine Pearl", ja: "アルプスの瞳" }, desc: { en: "A glacial lake famous for its island church and medieval castle.", ja: "湖に浮かぶ小島の教会と、崖の上の古城で知られる氷河湖。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 9 },
         { coords: [45.5283, 13.5682], region: "Europe", type: "City", country: { en: "Slovenia", ja: "スロベニア" }, city: { en: "Piran", ja: "ピラン" }, name: { en: "Piran", ja: "ピラン" }, nickname: { en: "The Venetian Jewel", ja: "スロベニアのベネチア" }, desc: { en: "One of the most photogenic cities in the Mediterranean with medieval architecture.", ja: "中世の建築が残る、地中海で最もフォトジェニックな街の一つ。" }, season: { en: "Summer", ja: "夏" }, gpiRank: 9 },
 
-        // AMERICA (15 Items)
+        // AMERICA (12 Items)
         { coords: [24.1843, -76.4526], region: "America", type: "Nature", country: { en: "Bahamas", ja: "バハマ" }, city: { en: "Exuma", ja: "エグズーマ" }, name: { en: "Pig Beach", ja: "ピッグ・ビーチ" }, nickname: { en: "Pig Island", ja: "豚の島" }, desc: { en: "An island populated by swimming feral pigs that greet boats.", ja: "野生の豚がビーチに生息し、泳いでボートを出迎えてくれる島。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 30 },
         { coords: [-46.6157, -72.6416], region: "America", type: "Nature", country: { en: "Chile", ja: "チリ" }, city: { en: "Puerto Rio Tranquilo", ja: "プエルト・リオ・トランキロ" }, name: { en: "Marble Caves", ja: "マーブル・カテドラル" }, nickname: { en: "The Marble Cathedral", ja: "大理石の大聖堂" }, desc: { en: "Caves formed by waves creating swirling blue marble patterns.", ja: "波の侵食によって形成された、青い大理石の模様が渦巻く洞窟。" }, season: { en: "Dec-Mar", ja: "12月-3月" }, gpiRank: 64 },
         { coords: [-20.1338, -67.4891], region: "America", type: "Nature", country: { en: "Bolivia", ja: "ボリビア" }, city: { en: "Uyuni", ja: "ウユニ" }, name: { en: "Salar de Uyuni", ja: "ウユニ塩湖" }, nickname: { en: "The World’s Largest Mirror", ja: "世界最大の鏡" }, desc: { en: "The world's largest salt flat. Water transforms it into a giant mirror.", ja: "世界最大の塩原。雨季には水が張り、巨大な鏡へと変貌します。" }, season: { en: "Jan-Mar (Rainy)", ja: "1月-3月 (雨季)" }, gpiRank: 83 },
@@ -420,7 +420,7 @@
         { coords: [39.2974, -76.6152], region: "America", type: "Library", country: { en: "United States", ja: "アメリカ" }, city: { en: "Baltimore", ja: "ボルチモア" }, name: { en: "The George Peabody Library", ja: "ジョージ・ピーボディ図書館" }, nickname: { en: "The Cathedral of Books", ja: "本の聖堂" }, desc: { en: "A stunning 19th-century research library with cast-iron balconies.", ja: "鋳鉄製のバルコニーが特徴的な、19世紀の美しい研究図書館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 132 },
         { coords: [41.7906, -87.5830], region: "America", type: "Museum", country: { en: "United States", ja: "アメリカ" }, city: { en: "Chicago", ja: "シカゴ" }, name: { en: "Griffin Museum of Science and Industry", ja: "グリフィン科学産業博物館" }, nickname: { en: "Sci-Tech Wonderland", ja: "科学技術のワンダーランド" }, desc: { en: "One of the largest science museums in the world, housed in the former Palace of Fine Arts.", ja: "旧パレス・オブ・ファイン・アーツ内にある、世界最大級の科学博物館。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 132 },
         { coords: [-2.4859, -43.1284], region: "America", type: "Nature", country: { en: "Brazil", ja: "ブラジル" }, city: { en: "Maranhão", ja: "マラニョン" }, name: { en: "Lençóis Maranhenses", ja: "レンソイス・マラニャンセス" }, nickname: { en: "The Desert of Lagoons", ja: "ラグーンの砂漠" }, desc: { en: "White sand dunes with fresh rainwater lagoons in the valleys.", ja: "白い砂丘と、その谷間に溜まった雨水による青いラグーンの絶景。" }, season: { en: "June-Sept", ja: "6月-9月" }, gpiRank: 131 },
-        { coords: [18.6756, -88.3917], region: "America", type: "Nature", country: { en: "Mexico", ja: "メキシコ" }, city: { en: "Bacalar", ja: "バカラル" }, name: { en: "Bacalar Lagoon", ja: "バカラル湖" }, nickname: { en: "The Lagoon of Seven Colors", ja: "七色の湖" }, desc: { en: "Famous for its striking blue color and water clarity.", ja: "その驚くべき青さと透明度で知られる細長い湖。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 139 },
+	        { coords: [18.6756, -88.3917], region: "America", type: "Nature", country: { en: "Mexico", ja: "メキシコ" }, city: { en: "Bacalar", ja: "バカラル" }, name: { en: "Bacalar Lagoon", ja: "バカラル湖" }, nickname: { en: "The Lagoon of Seven Colors", ja: "七色の湖" }, desc: { en: "Famous for its striking blue color and water clarity.", ja: "その驚くべき青さと透明度で知られる細長い湖。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 139 },
         { coords: [2.2644, -73.7944], region: "America", type: "Nature", country: { en: "Colombia", ja: "コロンビア" }, city: { en: "La Macarena", ja: "ラ・マカレナ" }, name: { en: "Caño Cristales", ja: "キャノ・クリスタレス" }, nickname: { en: "The River of Five Colors", ja: "五色の川" }, desc: { en: "The river bursts into vibrant red, yellow, and green colors due to aquatic plants.", ja: "水生植物の影響で、川が赤・黄・緑などの鮮やかな色に染まります。" }, season: { en: "July-Nov", ja: "7月-11月" }, gpiRank: 146 },
         { coords: [9.3333, -71.7167], region: "America", type: "Nature", country: { en: "Venezuela", ja: "ベネズエラ" }, city: { en: "Lake Maracaibo", ja: "マラカイボ湖" }, name: { en: "Catatumbo", ja: "カタトゥンボの雷" }, nickname: { en: "The Everlasting Storm", ja: "永遠の嵐" }, desc: { en: "An atmospheric phenomenon where lightning occurs up to 280 times per hour.", ja: "一時間に最大280回もの雷が発生する、世界で最も雷が多い場所。" }, season: { en: "Apr-Nov", ja: "4月-11月" }, gpiRank: 147 },
 
@@ -428,7 +428,7 @@
         { coords: [-24.7592, 15.2926], region: "Africa", type: "Nature", country: { en: "Namibia", ja: "ナミビア" }, city: { en: "Namib-Naukluft", ja: "ナミブ＝ナウクルフト" }, name: { en: "Deadvlei", ja: "デッドフレイ" }, nickname: { en: "The Dead Marsh", ja: "死の沼地" }, desc: { en: "Dark, dead trees contrasted against white clay and orange dunes.", ja: "白い粘土質の地面、オレンジ色の砂丘、そして黒く枯れた木のコントラスト。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 50 },
         { coords: [35.1716, -5.2697], region: "Africa", type: "City", country: { en: "Morocco", ja: "モロッコ" }, city: { en: "Chefchaouen", ja: "シャウエン" }, name: { en: "Chefchaouen", ja: "シャウエン" }, nickname: { en: "The Blue City", ja: "青い街" }, desc: { en: "A mountain city known for its striking, blue-washed buildings.", ja: "建物が鮮やかな青色に塗られた、山間にある美しい街。" }, season: { en: "Spring/Autumn", ja: "春・秋" }, gpiRank: 78 },
 
-        // ASIA (18 Items)
+        // ASIA (21 Items)
         { coords: [5.9804, 116.0735], region: "Asia", type: "Nature", country: { en: "Malaysia", ja: "マレーシア" }, city: { en: "Kota Kinabalu", ja: "コタキナバル" }, name: { en: "Kota Kinabalu Wetlands", ja: "コタキナバル湿地" }, nickname: { en: "The Firefly Coast", ja: "ホタルの海岸" }, desc: { en: "Mangrove wetlands that transform into a display of thousands of fireflies.", ja: "夜になると数千匹のホタルが瞬く、幻想的なマングローブの湿地帯。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 10 },
         { coords: [25.1095, 121.8449], region: "Asia", type: "City", country: { en: "Taiwan", ja: "台湾" }, city: { en: "New Taipei City", ja: "新北" }, name: { en: "Jiufen", ja: "九份" }, nickname: { en: "The Spirited Away Town", ja: "千と千尋の神隠しの街" }, desc: { en: "A mountain town with narrow alleyways, tea houses, and lanterns.", ja: "狭い路地、茶屋、赤い提灯が並ぶ、ノスタルジックな山あいの街。" }, season: { en: "All Year", ja: "通年" }, gpiRank: 35 },
         { coords: [23.8687, 120.9416], region: "Asia", type: "Museum", country: { en: "Taiwan", ja: "台湾" }, city: { en: "Nantou", ja: "南投" }, name: { en: "Formosan Aboriginal Culture Village", ja: "九族文化村" }, nickname: { en: "Taiwan’s Sakura Park", ja: "台湾の桜の名所" }, desc: { en: "A theme park celebrating indigenous heritage that turns pink during cherry blossom season.", ja: "先住民族の文化をテーマにしたパーク。春には桜が満開になり、ピンク色に染まります。" }, season: { en: "Feb (Sakura)", ja: "2月 (桜)" }, gpiRank: 35 },
